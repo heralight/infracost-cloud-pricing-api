@@ -28,6 +28,66 @@ Infracost runs a hosted version of this API that you can use if you prefer that:
     
     The [GraphQL Playground](https://pricing.api.infracost.io/graphql) can also be used with something like the [modheader](https://bewisse.com/modheader/) browser extension so you can set the custom HTTP header `X-Api-Key` to your Infracost API key.
 
+### Other examples
+
+```sh
+
+
+
+curl http://localhost:4000/graphql \
+  -X POST \
+  -H 'X-Api-Key: TOTO' \
+  -H 'Content-Type: application/json' \
+  --data '
+  {"query": "{ products(filter: {vendorName: \"aws\", service: \"AmazonEC2\", region: \"us-gov-west-1\", attributeFilters: [{key: \"instanceType\", value: \"m3.large\"}, {key: \"operatingSystem\", value: \"Linux\"}, {key: \"tenancy\", value: \"Shared\"}, {key: \"capacitystatus\", value: \"Used\"}, {key: \"preInstalledSw\", value: \"NA\"}]}) { prices(filter: {purchaseOption: \"on_demand\"}) { USD } } } "}
+  '
+```
+
+
+for query like:
+```sh
+  query {
+  products(
+    filter: {
+      vendorName: "aws",
+      service: "AmazonEC2",
+      productFamily: "Compute Instance",
+      region: "us-east-1",
+      attributeFilters: [
+        { key: "instanceType", value: "t3.micro" }
+      ]
+    },
+  ) {
+    attributes { key, value }
+    prices { USD }
+  }
+}
+```
+
+use for example:
+```sh
+curl -s http://localhost:4000/graphql -X POST \
+-H 'X-Api-Key: TOTO' \
+-H "Content-Type: application/json" \
+-d "$(jq -c -n --arg query '
+query {
+  products(
+    filter: {
+      vendorName: "aws",
+      service: "AmazonEC2",
+      productFamily: "Compute Instance",
+      region: "us-east-1",
+      attributeFilters: [
+        { key: "instanceType", value: "t3.micro" }
+      ]
+    },
+  ) {
+    attributes { key, value }
+    prices { USD }
+  }
+}' '{"query":$query}')"
+```
+
 ## Architecture
 
 The following diagram shows an overview of the architecture.
@@ -147,3 +207,5 @@ Our team is currently focused on supporting AWS, Azure and GCP so we prefer not 
 ## License
 
 [Apache License 2.0](https://choosealicense.com/licenses/apache-2.0/)
+
+

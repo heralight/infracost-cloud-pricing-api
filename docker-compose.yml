@@ -1,4 +1,4 @@
-version: '3.4'
+
 
 services:
   api:
@@ -22,8 +22,29 @@ services:
       retries: 3
       start_period: 10s
     depends_on: [postgres]
+    # networks:
+    #   - cloud_pricing_api
+
+  shell:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+        - 4000:4000
+    environment:
+      - INFRACOST_API_KEY=${INFRACOST_API_KEY}
+      - SELF_HOSTED_INFRACOST_API_KEY=${SELF_HOSTED_INFRACOST_API_KEY}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=cloud_pricing
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    entrypoint: ["/bin/sh", "-c", "tail -f /dev/null"]
+    volumes:
+      - ./:/usr/src/ap2
+    # networks:
+    #   - cloud_pricing_api
     networks:
-      - cloud_pricing_api
+      - no-internet
 
   init_job:
     build:
@@ -37,8 +58,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     depends_on: [postgres]
-    networks:
-      - cloud_pricing_api
+    # networks:
+    #   - cloud_pricing_api
     command: ["npm", "run", "job:init"]
 
   # Cron: Add a cron job to run every week to update the database data. The cron entry should look something like:
@@ -55,12 +76,12 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     depends_on: [postgres]
-    networks:
-      - cloud_pricing_api
+    # networks:
+    #   - cloud_pricing_api
     command: ["npm", "run", "job:update"]
 
   postgres:
-    image: postgres:13
+    image: postgres:14.4
     user: postgres
     environment:
       - POSTGRES_DB=cloud_pricing
@@ -75,10 +96,37 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data/
     networks:
-      - cloud_pricing_api
+      - no-internet
+    # networks:
+    #   - cloud_pricing_api
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - "35480:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: a@a.co
+      PGADMIN_DEFAULT_PASSWORD: a
+      PGADMIN_DISABLE_POSTFIX: True
+    volumes:
+      - ./data/pgadmin-data:/var/lib/pgadmin
+    networks:
+      - no-internet
+      - gtw
  
 volumes:
   postgres-data:
 
-networks:
-  cloud_pricing_api:
+# networks:
+#   cloud_pricing_api:
+
+
+networks: 
+  default: 
+      name: gtw
+  gtw:
+    name: gtw
+  no-internet:
+    driver: bridge
+    internal: true

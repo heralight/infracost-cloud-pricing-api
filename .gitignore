@@ -2,7 +2,7 @@
 /data
 /creds
 .env*
-package-lock.json
+/prod_node_modules
 
 # Temp
 /tmp
@@ -16,3 +16,6 @@ package-lock.json
 # IDE
 .idea/
 .vscode/
+*.sql
+tools
+To_Test.md

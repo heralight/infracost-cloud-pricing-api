@@ -1,7 +1,7 @@
 import fs from 'fs';
 import _ from 'lodash';
 import axios from 'axios';
-import glob from 'glob';
+import { glob } from 'glob';
 import config from '../config';
 import { Product, Price } from '../db/types';
 import { generateProductHash, generatePriceHash } from '../db/helpers';
@@ -11,6 +11,10 @@ const baseUrl = 'https://pricing.us-east-1.amazonaws.com';
 const indexUrl = '/offers/v1.0/aws/index.json';
 const chinaIndexUrl = '/offers/v1.0/cn/index.json';
 const splitByRegions = ['AmazonEC2'];
+
+/* const regionMapping: { [key: string]: string } = {
+  'AWS GovCloud (US)': 'us-gov-west-1',
+}; */
 
 const regionMapping: { [key: string]: string } = {
   'AWS GovCloud (US)': 'us-gov-west-1',
@@ -138,9 +142,9 @@ async function downloadService(offer: Offer, prefix?: string) {
         `data/${prefix}-${offer.offerCode}-${region.regionCode}.json`
       );
       resp.data.pipe(writer);
-      await new Promise((resolve) => {
-        writer.on('finish', resolve);
-      });
+           await new Promise<void>((resolve) => {
+  writer.on('finish', () => resolve());
+});
     }
   } else {
     config.logger.info(`Downloading ${offer.currentVersionUrl}`);
@@ -153,14 +157,17 @@ async function downloadService(offer: Offer, prefix?: string) {
       `data/${prefix}-${offer.offerCode}.json`
     );
     resp.data.pipe(writer);
-    await new Promise((resolve) => {
-      writer.on('finish', resolve);
+    await new Promise<void>((resolve) => {
+      writer.on('finish', () => resolve());
     });
   }
 }
 
+
+
 async function loadAll(): Promise<void> {
-  for (const filename of glob.sync('data/aws*.json')) {
+  const files = await glob('data/aws*.json'); // Promise<string[]>
+  for (const filename of files) {
     config.logger.info(`Processing file: ${filename}`);
     try {
       await processFile(filename);
@@ -170,6 +177,7 @@ async function loadAll(): Promise<void> {
     }
   }
 }
+
 
 async function processFile(filename: string): Promise<void> {
   const body = fs.readFileSync(filename);

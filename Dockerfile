@@ -1,14 +1,15 @@
-FROM node:16.13-alpine3.12 as build
-
+FROM node:20-alpine3.21  AS build
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm install --production \
+RUN npm install --omit=dev \
   && cp -R node_modules prod_node_modules \
   && npm install
 COPY . .
 RUN npm run build
 
-FROM node:16.13-alpine3.12 as release
+
+
+FROM node:20-alpine3.21 AS release
 
 RUN apk add --no-cache bash curl postgresql-client
 
